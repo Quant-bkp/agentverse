@@ -51,8 +51,8 @@ const BLDG_FRAG = `
     // Street-level warm glow (fake reflected street light from below)
     float streetGlow = pow(max(0.0, 1.0 - vUv.y * 6.0), 2.0) * 0.18;
     vec3 wallBase = isGroundFloor ? uGround : uWall;
-    // Lift dark walls slightly so silhouettes read at night
-    wallBase = max(wallBase, vec3(0.03, 0.032, 0.04));
+    // Lift dark walls so silhouettes always read at night
+    wallBase = max(wallBase, vec3(0.05, 0.054, 0.068));
     vec3 wall = wallBase + vec3(0.12, 0.08, 0.04) * streetGlow;
 
     // Floor separation bands

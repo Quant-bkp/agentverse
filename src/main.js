@@ -18,10 +18,10 @@ const roads       = createRoads(scene)
 const stars       = createStarField(scene)
 const movement    = createMovementControls(camera, renderer.domElement)
 
-// Start at the entrance of the PFC Financial District
-// PFC is at (200, 0, 0) — we place the camera approaching it
-camera.position.set(148, 1.7, 22)
-camera.lookAt(190, 1.7, 0)
+// Start inside PFC Financial District, looking down a main street
+// PFC is at world (200, 0, 0) — camera on west side, looking east (+X)
+camera.position.set(168, 1.7, 0)
+camera.lookAt(240, 1.7, 0)
 
 // ── UI ───────────────────────────────────────────────────────────────────────
 
