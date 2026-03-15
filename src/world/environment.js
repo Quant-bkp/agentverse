@@ -51,18 +51,18 @@ const GROUND_FRAG = `
     float ring      = pow(max(0.0, sin(ringPhase) * 0.5 + 0.5), 7.0);
     ring *= exp(-dist * 0.006) * 0.8;
 
-    // Circuit traces — 7 spokes toward each brain district
-    // Angles: evenly spaced (2*PI/7 apart), starting at angle=0
+    // Circuit traces — 7 spokes toward each brain district (unrolled for iOS compat)
     float spoke = 0.0;
-    float PI2_7 = 0.8975979; // 2*PI/7
-    for (int i = 0; i < 7; i++) {
-      float ang     = float(i) * PI2_7;
-      float s       = districtSpoke(xz, ang);
-      // Pulse traveling outward along each spoke
-      float spokePhase = dist * 0.03 - uTime * 0.6 + float(i) * 0.9;
-      float flow    = pow(max(0.0, sin(spokePhase) * 0.5 + 0.5), 5.0);
-      spoke        += s * (0.15 + flow * 0.6);
+    const float PI2_7 = 0.8975979; // 2*PI/7
+    #define SPOKE(idx) { \
+      float ang = float(idx) * PI2_7; \
+      float s   = districtSpoke(xz, ang); \
+      float sp  = dist * 0.03 - uTime * 0.6 + float(idx) * 0.9; \
+      float fl  = pow(max(0.0, sin(sp) * 0.5 + 0.5), 5.0); \
+      spoke    += s * (0.15 + fl * 0.6); \
     }
+    SPOKE(0) SPOKE(1) SPOKE(2) SPOKE(3) SPOKE(4) SPOKE(5) SPOKE(6)
+    #undef SPOKE
     spoke *= (1.0 - smoothstep(80.0, 220.0, dist)) * 0.7;
 
     vec3 base      = vec3(0.010, 0.013, 0.020);
