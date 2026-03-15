@@ -35,6 +35,7 @@ const BLDG_FRAG = `
   uniform vec3  uGround;
   uniform vec3  uWindow;
   uniform float uLit;
+  uniform float uTime;
 
   varying vec2  vUv;
   varying vec3  vWorldPos;
@@ -48,11 +49,18 @@ const BLDG_FRAG = `
   void main() {
     bool isGroundFloor = vUv.y < 0.12;
 
+    // Core light — emanates from origin (0,0,0), reaches all districts
+    float coreDist  = length(vWorldPos.xz);
+    float coreLight = exp(-coreDist * 0.0035);
+    float corePulse = sin(uTime * 0.85) * 0.1 + 0.9;
+
     // Street-level warm glow (fake reflected street light from below)
     float streetGlow = pow(max(0.0, 1.0 - vUv.y * 6.0), 2.0) * 0.18;
     vec3 wallBase = isGroundFloor ? uGround : uWall;
-    // Lift dark walls so silhouettes always read at night
+    // Floor always reads — minimum brightness
     wallBase = max(wallBase, vec3(0.05, 0.054, 0.068));
+    // Core cyan floods all building faces — stronger closer to origin
+    wallBase += vec3(0.0, 0.20, 0.30) * coreLight * corePulse;
     vec3 wall = wallBase + vec3(0.12, 0.08, 0.04) * streetGlow;
 
     // Floor separation bands
@@ -141,18 +149,22 @@ const SIDEWALK_FRAG = `
 `
 
 // ── Material cache (shared per region to save draw calls) ──────────────────
+const BUILDING_MATS = []
 
 function makeBuildingMat(cfg) {
-  return new THREE.ShaderMaterial({
+  const mat = new THREE.ShaderMaterial({
     vertexShader:   BLDG_VERT,
     fragmentShader: BLDG_FRAG,
     uniforms: {
       uWall:   { value: new THREE.Color(cfg.wallColor) },
       uGround: { value: new THREE.Color(cfg.groundFloor) },
       uWindow: { value: new THREE.Color(cfg.windowColor) },
-      uLit:    { value: cfg.windowLit }
+      uLit:    { value: cfg.windowLit },
+      uTime:   { value: 0 }
     }
   })
+  BUILDING_MATS.push(mat)
+  return mat
 }
 
 const ROAD_MATS = {}
@@ -429,7 +441,8 @@ function buildLandmark(region, rng) {
             uWall:   { value: new THREE.Color(0x0c1828) },
             uGround: { value: new THREE.Color(0x111a28) },
             uWindow: { value: new THREE.Color(0xaaccff) },
-            uLit:    { value: 0.80 }
+            uLit:    { value: 0.80 },
+            uTime:   { value: 0 }
           }
         })
         const tower = new THREE.Mesh(new THREE.BoxGeometry(7, h, 7), mat)
@@ -623,6 +636,8 @@ export function createCities(scene) {
   return {
     update(t) {
       roadMats.forEach(m => { m.uniforms.uTime.value = t })
+      // Tick uTime on all building materials so Core pulse animates
+      BUILDING_MATS.forEach(m => { if (m.uniforms.uTime) m.uniforms.uTime.value = t })
     }
   }
 }
