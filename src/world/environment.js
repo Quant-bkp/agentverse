@@ -25,32 +25,57 @@ const GROUND_FRAG = `
     return 1.0 - smoothstep(0.0, lw, grid);
   }
 
+  // Angle to one of 7 district directions — returns 0..1 proximity
+  float districtSpoke(vec2 xz, float angle) {
+    vec2 dir   = vec2(cos(angle), sin(angle));
+    vec2 norm  = normalize(xz);
+    float dot_ = max(0.0, dot(norm, dir));
+    // Angular width of spoke (narrower = sharper circuit trace)
+    return pow(dot_, 60.0);
+  }
+
   void main() {
-    vec2 xz = vWorldPos.xz;
+    vec2  xz   = vWorldPos.xz;
     float dist = length(xz);
 
-    // Hex grid lines — visible near Core, fades at districts
-    float grid = hexGrid(xz, 12.0, 0.035) * (1.0 - smoothstep(80.0, 200.0, dist));
+    // Hex grid — visible only near Core
+    float grid = hexGrid(xz, 12.0, 0.032) * (1.0 - smoothstep(60.0, 160.0, dist));
 
-    // Core radial glow — strong near origin, reaches districts
-    float radial    = exp(-dist * 0.004);
+    // Core radial glow
+    float radial    = exp(-dist * 0.0038);
     float pulse     = sin(uTime * 0.85) * 0.12 + 0.88;
     float coreGlow  = radial * pulse;
 
-    // Rings radiating outward from Core
-    float ringPhase = dist * 0.04 - uTime * 0.5;
-    float ring      = pow(max(0.0, sin(ringPhase) * 0.5 + 0.5), 6.0);
-    ring *= radial * 0.6;
+    // Expanding rings from Core
+    float ringPhase = dist * 0.038 - uTime * 0.45;
+    float ring      = pow(max(0.0, sin(ringPhase) * 0.5 + 0.5), 7.0);
+    ring *= exp(-dist * 0.006) * 0.8;
 
-    vec3 base     = vec3(0.012, 0.014, 0.020);
-    vec3 gridCol  = vec3(0.0, 0.12, 0.18);
-    vec3 glowCol  = vec3(0.0, 0.30, 0.45);
-    vec3 ringCol  = vec3(0.0, 0.50, 0.70);
+    // Circuit traces — 7 spokes toward each brain district
+    // Angles: evenly spaced (2*PI/7 apart), starting at angle=0
+    float spoke = 0.0;
+    float PI2_7 = 0.8975979; // 2*PI/7
+    for (int i = 0; i < 7; i++) {
+      float ang     = float(i) * PI2_7;
+      float s       = districtSpoke(xz, ang);
+      // Pulse traveling outward along each spoke
+      float spokePhase = dist * 0.03 - uTime * 0.6 + float(i) * 0.9;
+      float flow    = pow(max(0.0, sin(spokePhase) * 0.5 + 0.5), 5.0);
+      spoke        += s * (0.15 + flow * 0.6);
+    }
+    spoke *= (1.0 - smoothstep(80.0, 220.0, dist)) * 0.7;
+
+    vec3 base      = vec3(0.010, 0.013, 0.020);
+    vec3 gridCol   = vec3(0.00, 0.15, 0.22);
+    vec3 glowCol   = vec3(0.00, 0.28, 0.44);
+    vec3 ringCol   = vec3(0.00, 0.55, 0.78);
+    vec3 spokeCol  = vec3(0.10, 0.65, 0.90);
 
     vec3 col = base
-      + gridCol * grid * 0.5
-      + glowCol * coreGlow * 0.35
-      + ringCol * ring;
+      + gridCol  * grid * 0.5
+      + glowCol  * coreGlow * 0.30
+      + ringCol  * ring
+      + spokeCol * spoke;
 
     float fade = 1.0 - smoothstep(500.0, 700.0, dist);
     gl_FragColor = vec4(col, fade);
