@@ -25,38 +25,36 @@ const SKY_FRAG = `
     float h   = dir.y; // -1 bottom, 1 top
 
     // === Sky gradient ===
-    // horizon: Core-lit cyan glow
-    // midsky:  deep indigo/violet
-    // zenith:  near-black blue
-    vec3 horizon = vec3(0.02, 0.14, 0.22);
-    vec3 midsky  = vec3(0.010, 0.040, 0.110);
-    vec3 zenith  = vec3(0.004, 0.010, 0.028);
+    // horizon:  bright cyan-teal (Core light rising up)
+    // midsky:   deep indigo/violet
+    // zenith:   dark midnight blue
+    vec3 horizon = vec3(0.00, 0.22, 0.38);   // saturated cyan-teal
+    vec3 midsky  = vec3(0.04, 0.02, 0.18);   // deep violet-indigo
+    vec3 zenith  = vec3(0.01, 0.01, 0.06);   // near-black blue
 
-    float t1 = smoothstep(-0.05, 0.25, h);
-    float t2 = smoothstep(0.20,  0.75, h);
+    float t1 = smoothstep(-0.05, 0.30, h);
+    float t2 = smoothstep(0.25,  0.80, h);
     vec3 sky = mix(horizon, midsky, t1);
     sky       = mix(sky,    zenith, t2);
 
-    // === Aurora bands ===
-    // Horizontal wavering bands across the upper sky
+    // === Aurora bands — thin, cool, neural ===
     float aurora = 0.0;
-    if (h > 0.05) {
+    if (h > 0.08) {
       float band1 = sin(dir.x * 2.5 + uTime * 0.18) * sin(dir.z * 2.1 + uTime * 0.12);
       float band2 = sin(dir.x * 3.8 + uTime * 0.09 + 1.4) * sin(dir.z * 3.2 - uTime * 0.07);
-      float mask  = smoothstep(0.05, 0.35, h) * (1.0 - smoothstep(0.55, 0.90, h));
+      float mask  = smoothstep(0.08, 0.40, h) * (1.0 - smoothstep(0.50, 0.85, h));
       aurora = (band1 * 0.5 + 0.5) * (band2 * 0.5 + 0.5) * mask;
-      aurora = pow(aurora, 2.2) * 0.55;
+      aurora = pow(aurora, 2.5) * 0.45;
     }
 
-    // Aurora color: cyan → violet → cyan
+    // Aurora color: pure cyan → deep violet (never warm)
     float aPhase = sin(dir.x * 1.2 + uTime * 0.08) * 0.5 + 0.5;
-    vec3 aColor  = mix(vec3(0.0, 0.7, 0.9), vec3(0.5, 0.1, 0.9), aPhase);
-
+    vec3 aColor  = mix(vec3(0.0, 0.9, 1.0), vec3(0.3, 0.0, 0.8), aPhase);
     sky += aColor * aurora;
 
-    // === Core horizon glow — warm cyan bloom at horizon level ===
-    float hglow  = pow(max(0.0, 1.0 - abs(h) * 6.0), 3.0) * 0.18;
-    sky += vec3(0.0, 0.35, 0.55) * hglow;
+    // === Core horizon bloom — cyan band right at the horizon ===
+    float hglow = pow(max(0.0, 1.0 - abs(h + 0.02) * 5.0), 2.5) * 0.22;
+    sky += vec3(0.0, 0.55, 0.80) * hglow;
 
     gl_FragColor = vec4(sky, 1.0);
   }
