@@ -46,42 +46,53 @@ const BLDG_FRAG = `
   }
 
   void main() {
-    bool isGroundFloor = vUv.y < 0.14;
+    bool isGroundFloor = vUv.y < 0.12;
 
-    vec3 wall = isGroundFloor ? uGround : uWall;
+    // Street-level warm glow (fake reflected street light from below)
+    float streetGlow = pow(max(0.0, 1.0 - vUv.y * 6.0), 2.0) * 0.18;
+    vec3 wallBase = isGroundFloor ? uGround : uWall;
+    // Lift dark walls slightly so silhouettes read at night
+    wallBase = max(wallBase, vec3(0.03, 0.032, 0.04));
+    vec3 wall = wallBase + vec3(0.12, 0.08, 0.04) * streetGlow;
 
-    // Floor separation bands (horizontal lines every ~3.5/totalH)
-    float floorBand = step(0.985, fract(vUv.y * 9.0));
-    wall = mix(wall, wall * 0.55, floorBand * 0.6);
+    // Floor separation bands
+    float floorBand = step(0.988, fract(vUv.y * 9.0));
+    wall = mix(wall, wall * 0.4, floorBand * 0.7);
 
-    // Window grid — ground floor: 2 wide cols; upper: 4 cols
+    // Window grid
     float cols = isGroundFloor ? 2.0 : 4.0;
     float rows = isGroundFloor ? 1.0 : 8.0;
 
     vec2 winGrid = fract(vUv * vec2(cols, rows));
     vec2 cell    = floor(vUv  * vec2(cols, rows));
 
-    float bdrX = isGroundFloor ? 0.10 : 0.14;
-    float bdrY = isGroundFloor ? 0.12 : 0.16;
+    float bdrX = isGroundFloor ? 0.09 : 0.13;
+    float bdrY = isGroundFloor ? 0.10 : 0.15;
     float inWin = step(bdrX, winGrid.x) * step(winGrid.x, 1.0 - bdrX) *
                   step(bdrY, winGrid.y) * step(winGrid.y, 1.0 - bdrY);
 
-    // Seed from world XZ so adjacent buildings differ
     vec2 seed  = floor(vWorldPos.xz * 0.18) + cell + vec2(3.1, 7.4);
     float lit  = step(1.0 - uLit, hash(seed));
-    float brt  = 0.55 + hash(seed + 11.3) * 0.45;
+    float brt  = 0.65 + hash(seed + 11.3) * 0.35;
 
-    // Ground floor: some windows unlit (storefronts sometimes closed)
-    float groundLit = isGroundFloor ? (lit * step(0.35, hash(seed + 55.0))) : lit;
+    float groundLit = isGroundFloor ? (lit * step(0.3, hash(seed + 55.0))) : lit;
 
+    // Window color — brighter, slight halo bleed on wall
     vec3 winCol = uWindow * brt;
-    // Ambient bleed from lit windows onto surrounding wall
-    wall += uWindow * 0.022;
+
+    // Halo: lit windows bleed light onto surrounding wall area
+    float halo = (1.0 - inWin) * lit *
+      (smoothstep(0.0, 0.25, winGrid.x) * smoothstep(1.0, 0.75, winGrid.x) *
+       smoothstep(0.0, 0.25, winGrid.y) * smoothstep(1.0, 0.75, winGrid.y)) * 0.3;
+    wall += uWindow * halo * brt;
+
+    // Strong ambient bleed from all the windows
+    wall += uWindow * 0.045;
 
     vec3 col = mix(wall, winCol, inWin * groundLit);
 
-    // Parapet top
-    col = mix(col, wall * 0.5, step(0.952, vUv.y));
+    // Parapet
+    col = mix(col, wallBase * 0.45, step(0.955, vUv.y));
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -349,7 +360,7 @@ function buildStreetLights(group, cfg, N) {
       group.add(head)
 
       // Light
-      const pt = new THREE.PointLight(cfg.streetLight, 1.6, 26)
+      const pt = new THREE.PointLight(cfg.streetLight, 3.5, 40)
       pt.position.set(x - ROAD / 2 - 0.8 + 1.2, 7.0, z - ROAD / 2 - 0.8)
       group.add(pt)
     }
@@ -601,9 +612,9 @@ export function createCities(scene) {
     landmark.position.set(0, 0, landmarkOffset)
     group.add(landmark)
 
-    // District ambient light
-    const ambient = new THREE.PointLight(region.color, 0.4, 280)
-    ambient.position.set(0, 50, 0)
+    // District ambient light — high and wide, tints the whole district
+    const ambient = new THREE.PointLight(region.color, 1.2, 350)
+    ambient.position.set(0, 60, 0)
     group.add(ambient)
 
     scene.add(group)
