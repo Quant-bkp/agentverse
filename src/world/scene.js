@@ -5,7 +5,7 @@ export function createScene() {
   // Scene
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(0x000008)
-  scene.fog = new THREE.FogExp2(FOG_COLOR, 0.0035)
+  scene.fog = new THREE.FogExp2(FOG_COLOR, 0.0025)
 
   // Camera — eye height 1.7
   const camera = new THREE.PerspectiveCamera(

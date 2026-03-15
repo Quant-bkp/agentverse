@@ -432,7 +432,7 @@ function buildLandmark(region, rng) {
         tip.position.set(ox, h + 7, 0)
         g.add(tip)
       })
-      g.add(Object.assign(new THREE.PointLight(0x88bbff, 3.0, 160), { position: new THREE.Vector3(0, 90, 0) }))
+      { const _l = new THREE.PointLight(0x88bbff, 3.0, 160); _l.position.set(0, 90, 0); g.add(_l); }
       break
     }
 
@@ -451,7 +451,7 @@ function buildLandmark(region, rng) {
         new THREE.LineBasicMaterial({ color: 0xff66cc, transparent: true, opacity: 0.5 })
       )
       domeWire.position.y = 4; g.add(domeWire)
-      g.add(Object.assign(new THREE.PointLight(0xff66cc, 2.5, 100), { position: new THREE.Vector3(0, 14, 0) }))
+      { const _l = new THREE.PointLight(0xff66cc, 2.5, 100); _l.position.set(0, 14, 0); g.add(_l); }
       break
     }
 
@@ -490,7 +490,7 @@ function buildLandmark(region, rng) {
         spoke.rotation.y = a
         spoke.position.y = 38; g.add(spoke)
       }
-      g.add(Object.assign(new THREE.PointLight(0x6677ff, 3.0, 120), { position: new THREE.Vector3(0, 40, 0) }))
+      { const _l = new THREE.PointLight(0x6677ff, 3.0, 120); _l.position.set(0, 40, 0); g.add(_l); }
       break
     }
 
@@ -513,7 +513,7 @@ function buildLandmark(region, rng) {
           new THREE.MeshBasicMaterial({ color: 0x1a0828 }))
         pillar.position.set(-12 + k * 4, ph / 2 + 16, -10); g.add(pillar)
       }
-      g.add(Object.assign(new THREE.PointLight(0xaa55ff, 3.0, 100), { position: new THREE.Vector3(0, 20, 0) }))
+      { const _l = new THREE.PointLight(0xaa55ff, 3.0, 100); _l.position.set(0, 20, 0); g.add(_l); }
       break
     }
 
@@ -531,7 +531,7 @@ function buildLandmark(region, rng) {
         rim.rotation.x = Math.PI / 2
         rim.position.y = y + h; g.add(rim)
       }
-      g.add(Object.assign(new THREE.PointLight(0xffaa22, 2.5, 100), { position: new THREE.Vector3(0, 50, 0) }))
+      { const _l = new THREE.PointLight(0xffaa22, 2.5, 100); _l.position.set(0, 50, 0); g.add(_l); }
       break
     }
 
@@ -550,7 +550,7 @@ function buildLandmark(region, rng) {
         band.rotation.x = Math.PI / 2
         band.position.set(ox, sh - 4, -14); g.add(band)
       })
-      g.add(Object.assign(new THREE.PointLight(0x556655, 1.5, 80), { position: new THREE.Vector3(0, 32, 0) }))
+      { const _l = new THREE.PointLight(0x556655, 1.5, 80); _l.position.set(0, 32, 0); g.add(_l); }
       break
     }
   }

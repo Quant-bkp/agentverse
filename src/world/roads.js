@@ -81,15 +81,12 @@ export function createRoads(scene) {
       const plz  = lz + Math.sin(perp) * (ROAD_WIDTH / 2 + 1.5)
 
       // Pole
-      scene.add(
-        Object.assign(
-          new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08, 0.1, 7, 4),
-            new THREE.MeshBasicMaterial({ color: 0x222222 })
-          ),
-          { position: new THREE.Vector3(plx, 3.5, plz) }
-        )
+      const streetPole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.1, 7, 4),
+        new THREE.MeshBasicMaterial({ color: 0x222222 })
       )
+      streetPole.position.set(plx, 3.5, plz)
+      scene.add(streetPole)
 
       const light = new THREE.PointLight(0xffaa33, 1.4, 30)
       light.position.set(plx, 7, plz)

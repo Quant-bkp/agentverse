@@ -44,8 +44,8 @@ const GROUND_FRAG = `
 `
 
 export function createEnvironment(scene) {
-  // Very dim ambient — city at night
-  scene.add(new THREE.AmbientLight(0x020408, 1.0))
+  // City at night — enough ambient to read building silhouettes
+  scene.add(new THREE.AmbientLight(0x050a14, 1.0))
 
   // Ground
   const geo = new THREE.PlaneGeometry(2000, 2000, 1, 1)

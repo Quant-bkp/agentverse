@@ -18,9 +18,10 @@ const roads       = createRoads(scene)
 const stars       = createStarField(scene)
 const movement    = createMovementControls(camera, renderer.domElement)
 
-// Start in front of Core, facing toward PFC district
-camera.position.set(0, 1.7, 14)
-camera.lookAt(REGIONS[0].x * 0.1, 1.7, REGIONS[0].z * 0.1)
+// Start at the entrance of the PFC Financial District
+// PFC is at (200, 0, 0) — we place the camera approaching it
+camera.position.set(148, 1.7, 22)
+camera.lookAt(190, 1.7, 0)
 
 // ── UI ───────────────────────────────────────────────────────────────────────
 
@@ -35,10 +36,9 @@ const isMobile      = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 enterBtn.addEventListener('click', () => {
   entryEl.classList.add('hidden')
   hudEl.classList.add('visible')
-  setTimeout(() => {
-    entryEl.style.display = 'none'
-    if (!isMobile) movement.lock()
-  }, 800)
+  // Attempt PointerLock synchronously (user gesture required)
+  if (!isMobile) movement.lock()
+  setTimeout(() => { entryEl.style.display = 'none' }, 850)
 })
 
 if (!isMobile) {
