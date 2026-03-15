@@ -4,8 +4,8 @@ import { FOG_COLOR } from '../config/regions.js'
 export function createScene() {
   // Scene
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x000008)
-  scene.fog = new THREE.FogExp2(FOG_COLOR, 0.0025)
+  scene.background = new THREE.Color(0x030a14)   // matches sky horizon base
+  scene.fog = new THREE.FogExp2(0x050e1c, 0.0022) // deep blue fog, not black void
 
   // Camera — eye height 1.7
   const camera = new THREE.PerspectiveCamera(
@@ -25,7 +25,7 @@ export function createScene() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.2
+  renderer.toneMappingExposure = 1.5
   document.body.appendChild(renderer.domElement)
 
   // Resize handler

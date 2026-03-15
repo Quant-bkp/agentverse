@@ -4,7 +4,7 @@ import { createEnvironment } from './world/environment.js'
 import { createCore } from './world/core.js'
 import { createCities } from './world/cities.js'
 import { createRoads } from './world/roads.js'
-import { createStarField } from './world/particles.js'
+import { createSky } from './world/sky.js'
 import { createMovementControls } from './controls/movement.js'
 import { REGIONS, ZONE_PROXIMITY_RADIUS } from './config/regions.js'
 
@@ -15,7 +15,7 @@ const environment = createEnvironment(scene)
 const core        = createCore(scene)
 const cities      = createCities(scene)
 const roads       = createRoads(scene)
-const stars       = createStarField(scene)
+const sky         = createSky(scene)
 const movement    = createMovementControls(camera, renderer.domElement)
 
 // Start inside PFC Financial District, looking down a main street
@@ -101,7 +101,7 @@ function animate() {
   core.update(elapsed)
   cities.update(elapsed)
   roads.update(elapsed)
-  stars.update(elapsed)
+  sky.update(elapsed)
 
   if (frame % 6 === 0) checkZoneProximity()
   frame++
