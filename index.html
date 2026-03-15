@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Quant's Domain</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000010;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Entry overlay */
+    #entry {
+      position: fixed;
+      inset: 0;
+      background: #000010;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.8s ease;
+    }
+
+    #entry.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #entry h1 {
+      color: #00ffff;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 0.4em;
+      text-shadow: 0 0 20px rgba(0,255,255,0.6);
+    }
+
+    #entry p {
+      color: rgba(0,255,255,0.5);
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 2.5em;
+    }
+
+    #enter-btn {
+      background: transparent;
+      border: 1px solid rgba(0,255,255,0.4);
+      color: #00ffff;
+      padding: 0.75em 2.5em;
+      font-family: inherit;
+      font-size: 0.9rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #enter-btn:hover {
+      border-color: rgba(0,255,255,0.9);
+      box-shadow: 0 0 20px rgba(0,255,255,0.25);
+    }
+
+    /* HUD */
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      display: none;
+    }
+
+    #hud.visible { display: block; }
+
+    /* Crosshair */
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px;
+      height: 6px;
+      border: 1px solid rgba(0,255,255,0.6);
+      border-radius: 50%;
+    }
+
+    /* Zone label */
+    #zone-label {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.7);
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    #zone-label.visible { opacity: 1; }
+
+    #zone-name {
+      font-size: 1rem;
+      color: #fff;
+      display: block;
+      margin-bottom: 0.2em;
+    }
+
+    #zone-role {
+      color: rgba(255,255,255,0.4);
+      display: block;
+      font-size: 0.65rem;
+    }
+
+    /* Compass */
+    #compass {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      color: rgba(0,255,255,0.35);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-align: right;
+    }
+
+    /* Instructions (desktop) */
+    #instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: rgba(255,255,255,0.2);
+      font-size: 0.65rem;
+      line-height: 1.7;
+      letter-spacing: 0.05em;
+    }
+
+    /* Touch joystick */
+    #joystick-zone {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 50%;
+      height: 40%;
+      z-index: 20;
+      display: none;
+    }
+
+    #look-zone {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      width: 50%;
+      height: 60%;
+      z-index: 20;
+      display: none;
+    }
+
+    .touch-active #joystick-zone,
+    .touch-active #look-zone { display: block; }
+
+    #joystick-ring {
+      position: absolute;
+      bottom: 40px;
+      left: 40px;
+      width: 80px;
+      height: 80px;
+      border: 1px solid rgba(0,255,255,0.2);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    #joystick-dot {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: rgba(0,255,255,0.4);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: transform 0.05s;
+    }
+  </style>
+</head>
+<body>
+  <!-- Entry screen -->
+  <div id="entry">
+    <h1>Quant's Domain</h1>
+    <p>Cognition made spatial</p>
+    <button id="enter-btn">Enter</button>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="crosshair"></div>
+    <div id="zone-label">
+      <span id="zone-name"></span>
+      <span id="zone-role"></span>
+    </div>
+    <div id="compass" id="compass">N</div>
+    <div id="instructions">
+      WASD — move &nbsp;·&nbsp; Mouse — look<br>
+      ESC — release cursor
+    </div>
+  </div>
+
+  <!-- Touch zones (shown on mobile) -->
+  <div id="joystick-zone">
+    <div id="joystick-ring"><div id="joystick-dot"></div></div>
+  </div>
+  <div id="look-zone"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
