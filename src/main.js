@@ -2,44 +2,45 @@ import * as THREE from 'three'
 import { createScene } from './world/scene.js'
 import { createEnvironment } from './world/environment.js'
 import { createCore } from './world/core.js'
-import { createZones } from './world/zones.js'
+import { createCities } from './world/cities.js'
+import { createRoads } from './world/roads.js'
 import { createStarField } from './world/particles.js'
 import { createMovementControls } from './controls/movement.js'
 import { REGIONS, ZONE_PROXIMITY_RADIUS } from './config/regions.js'
 
-// ── Bootstrap ───────────────────────────────────────────────────────────────
+// ── Scene ───────────────────────────────────────────────────────────────────
 
 const { scene, camera, renderer } = createScene()
 const environment = createEnvironment(scene)
-const core = createCore(scene)
-const zones = createZones(scene)
-const stars = createStarField(scene)
-const movement = createMovementControls(camera, renderer.domElement)
+const core        = createCore(scene)
+const cities      = createCities(scene)
+const roads       = createRoads(scene)
+const stars       = createStarField(scene)
+const movement    = createMovementControls(camera, renderer.domElement)
 
-// ── UI Elements ─────────────────────────────────────────────────────────────
+// Start in front of Core, facing toward PFC district
+camera.position.set(0, 1.7, 14)
+camera.lookAt(REGIONS[0].x * 0.1, 1.7, REGIONS[0].z * 0.1)
 
-const entryEl = document.getElementById('entry')
-const enterBtn = document.getElementById('enter-btn')
-const hudEl = document.getElementById('hud')
-const zoneLabelEl = document.getElementById('zone-label')
-const zoneNameEl = document.getElementById('zone-name')
-const zoneRoleEl = document.getElementById('zone-role')
+// ── UI ───────────────────────────────────────────────────────────────────────
 
-const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+const entryEl       = document.getElementById('entry')
+const enterBtn      = document.getElementById('enter-btn')
+const hudEl         = document.getElementById('hud')
+const zoneLabelEl   = document.getElementById('zone-label')
+const zoneNameEl    = document.getElementById('zone-name')
+const zoneRoleEl    = document.getElementById('zone-role')
+const isMobile      = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 
 enterBtn.addEventListener('click', () => {
   entryEl.classList.add('hidden')
   hudEl.classList.add('visible')
-
   setTimeout(() => {
     entryEl.style.display = 'none'
-    if (!isMobile) {
-      movement.lock()
-    }
+    if (!isMobile) movement.lock()
   }, 800)
 })
 
-// Re-lock on click if pointer lock lost
 if (!isMobile) {
   document.addEventListener('click', () => {
     if (hudEl.classList.contains('visible') && !movement.isLocked) {
@@ -48,9 +49,9 @@ if (!isMobile) {
   })
 }
 
-// ── Zone proximity detection ─────────────────────────────────────────────────
+// ── Zone proximity ────────────────────────────────────────────────────────────
 
-let currentZone = null
+let currentZone      = null
 let zoneLabelTimeout = null
 
 function checkZoneProximity() {
@@ -61,9 +62,9 @@ function checkZoneProximity() {
   REGIONS.forEach(region => {
     const dx = pos.x - region.x
     const dz = pos.z - region.z
-    const dist = Math.sqrt(dx * dx + dz * dz)
-    if (dist < nearestDist) {
-      nearestDist = dist
+    const d  = Math.sqrt(dx * dx + dz * dz)
+    if (d < nearestDist) {
+      nearestDist = d
       nearest = region
     }
   })
@@ -80,33 +81,30 @@ function checkZoneProximity() {
     if (currentZone !== null) {
       currentZone = null
       clearTimeout(zoneLabelTimeout)
-      zoneLabelTimeout = setTimeout(() => {
-        zoneLabelEl.classList.remove('visible')
-      }, 1200)
+      zoneLabelTimeout = setTimeout(() => zoneLabelEl.classList.remove('visible'), 1200)
     }
   }
 }
 
-// ── Clock + Animation loop ──────────────────────────────────────────────────
+// ── Animation loop ────────────────────────────────────────────────────────────
 
 const clock = new THREE.Clock()
+let frame = 0
 
 function animate() {
   requestAnimationFrame(animate)
-
-  const delta = clock.getDelta()
+  const delta   = clock.getDelta()
   const elapsed = clock.getElapsedTime()
 
   movement.update(delta)
   environment.update(elapsed)
   core.update(elapsed)
-  zones.update(elapsed)
+  cities.update(elapsed)
+  roads.update(elapsed)
   stars.update(elapsed)
 
-  // Check zone proximity every few frames
-  if (Math.round(elapsed * 10) % 3 === 0) {
-    checkZoneProximity()
-  }
+  if (frame % 6 === 0) checkZoneProximity()
+  frame++
 
   renderer.render(scene, camera)
 }

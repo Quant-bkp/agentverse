@@ -1,131 +1,103 @@
 import * as THREE from 'three'
 import { CORE_COLOR } from '../config/regions.js'
 
-// The Core — my icosahedron form at (0,0,0)
-// Breathing wireframe with inner glow
+// The Core — central monument at (0,0,0)
+// Crystalline icosahedron above the central plaza
+// All roads converge here
 
 export function createCore(scene) {
   const group = new THREE.Group()
-  group.position.set(0, 4.5, 0)
 
-  // — Wireframe icosahedron —
-  const icoGeo = new THREE.IcosahedronGeometry(3.5, 1)
+  // Monument base — dark obelisk rising from plaza
+  const baseMat = new THREE.MeshBasicMaterial({ color: 0x040810 })
+
+  const base1 = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 4), baseMat)
+  base1.position.y = 1.5
+  group.add(base1)
+
+  const base2 = new THREE.Mesh(new THREE.BoxGeometry(3, 8, 3), baseMat)
+  base2.position.y = 8
+  group.add(base2)
+
+  const base3 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 6, 1.5), baseMat)
+  base3.position.y = 16
+  group.add(base3)
+
+  // Icosahedron — floating above, breathing
+  const icoGeo  = new THREE.IcosahedronGeometry(4, 1)
   const wireGeo = new THREE.WireframeGeometry(icoGeo)
 
   const wireMat = new THREE.ShaderMaterial({
-    vertexShader: `
-      void main() {
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
+    vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
       uniform float uTime;
-      uniform vec3 uColor;
-
       void main() {
-        float pulse = sin(uTime * 0.9) * 0.15 + 0.85;
-        gl_FragColor = vec4(uColor * pulse, 0.9);
+        float p = sin(uTime * 0.85) * 0.15 + 0.85;
+        gl_FragColor = vec4(0.0, 1.0, 1.0, 0.9 * p);
       }
     `,
-    uniforms: {
-      uTime: { value: 0 },
-      uColor: { value: new THREE.Color(CORE_COLOR) }
-    },
+    uniforms: { uTime: { value: 0 } },
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false
   })
 
   const wire = new THREE.LineSegments(wireGeo, wireMat)
+  wire.position.y = 24
   group.add(wire)
 
-  // — Inner glow sphere (additive, backside) —
-  const glowGeo = new THREE.SphereGeometry(4.2, 16, 16)
+  // Inner glow sphere
   const glowMat = new THREE.ShaderMaterial({
     vertexShader: `
       varying vec3 vNormal;
       varying vec3 vViewDir;
-
       void main() {
         vNormal = normalize(normalMatrix * normal);
-        vec4 worldPos = modelViewMatrix * vec4(position, 1.0);
-        vViewDir = normalize(-worldPos.xyz);
-        gl_Position = projectionMatrix * worldPos;
+        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+        vViewDir = normalize(-mvPos.xyz);
+        gl_Position = projectionMatrix * mvPos;
       }
     `,
     fragmentShader: `
       uniform float uTime;
       varying vec3 vNormal;
       varying vec3 vViewDir;
-
       void main() {
         float rim = 1.0 - abs(dot(vNormal, vViewDir));
-        rim = pow(rim, 2.5);
-        float pulse = sin(uTime * 0.9 + 0.3) * 0.2 + 0.8;
-        vec3 color = vec3(0.0, 1.0, 1.0);
-        gl_FragColor = vec4(color * rim * pulse, rim * 0.35);
+        rim = pow(rim, 2.2);
+        float p = sin(uTime * 0.85 + 0.4) * 0.2 + 0.8;
+        gl_FragColor = vec4(0.0, 1.0, 1.0, rim * 0.4 * p);
       }
     `,
-    uniforms: {
-      uTime: { value: 0 }
-    },
+    uniforms: { uTime: { value: 0 } },
     side: THREE.BackSide,
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false
   })
 
-  const glow = new THREE.Mesh(glowGeo, glowMat)
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16), glowMat)
+  glow.position.y = 24
   group.add(glow)
 
-  // — Outer ambient glow point light —
-  const coreLight = new THREE.PointLight(CORE_COLOR, 2.5, 50)
-  coreLight.position.set(0, 0, 0)
+  // Core beacon light
+  const coreLight = new THREE.PointLight(CORE_COLOR, 4.0, 80)
+  coreLight.position.y = 24
   group.add(coreLight)
-
-  // — Second icosahedron outline, slightly larger, rotated —
-  const icoGeo2 = new THREE.IcosahedronGeometry(4.0, 1)
-  const wireGeo2 = new THREE.WireframeGeometry(icoGeo2)
-  const wireMat2 = new THREE.ShaderMaterial({
-    vertexShader: `
-      void main() {
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      void main() {
-        float pulse = sin(uTime * 0.6 + 1.2) * 0.5 + 0.5;
-        gl_FragColor = vec4(0.0, 0.6, 0.8, 0.12 + pulse * 0.06);
-      }
-    `,
-    uniforms: {
-      uTime: { value: 0 }
-    },
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  })
-  const wire2 = new THREE.LineSegments(wireGeo2, wireMat2)
-  group.add(wire2)
 
   scene.add(group)
 
   return {
     update(t) {
-      // Breathing: scale oscillates slightly
-      const breathe = 1.0 + Math.sin(t * 0.9) * 0.04
+      const breathe = 1.0 + Math.sin(t * 0.85) * 0.05
       wire.scale.setScalar(breathe)
-      glow.scale.setScalar(breathe * 1.05)
-      wire2.rotation.y = t * 0.08
-      wire2.rotation.x = t * 0.05
-
+      glow.scale.setScalar(breathe)
+      wire.rotation.y = t * 0.1
       wireMat.uniforms.uTime.value = t
       glowMat.uniforms.uTime.value = t
-      wireMat2.uniforms.uTime.value = t
-
-      // Gentle float
-      group.position.y = 4.5 + Math.sin(t * 0.7) * 0.3
+      wire.position.y = 24 + Math.sin(t * 0.7) * 0.5
+      glow.position.y = wire.position.y
+      coreLight.position.y = wire.position.y
     }
   }
 }

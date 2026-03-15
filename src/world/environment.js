@@ -1,11 +1,10 @@
 import * as THREE from 'three'
-import { AMBIENT_COLOR } from '../config/regions.js'
 
-// ── Ground: infinite dark plane with hex grid GLSL shader ──────────────────
+// Ground — massive dark plane beneath everything
+// Subtle hex grid glow, darker than before (city asphalt vibe)
 
 const GROUND_VERT = `
   varying vec3 vWorldPos;
-
   void main() {
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
@@ -17,95 +16,54 @@ const GROUND_FRAG = `
   uniform float uTime;
   varying vec3 vWorldPos;
 
-  // Three-family hex grid: lines at 0°, 60°, 120°
-  // This creates a true hexagonal grid pattern
-  float hexGrid(vec2 p, float size, float lineWidth) {
+  float hexGrid(vec2 p, float size, float lw) {
     p /= size;
-
-    float c0 = cos(0.0);   float s0 = sin(0.0);
-    float c1 = cos(1.0472);  float s1 = sin(1.0472);   // 60°
-    float c2 = cos(2.0944);  float s2 = sin(2.0944);   // 120°
-
-    float d0 = fract(p.x * c0 + p.y * s0) - 0.5;
-    float d1 = fract(p.x * c1 + p.y * s1) - 0.5;
-    float d2 = fract(p.x * c2 + p.y * s2) - 0.5;
-
-    float l0 = 1.0 - smoothstep(0.0, lineWidth, abs(d0));
-    float l1 = 1.0 - smoothstep(0.0, lineWidth, abs(d1));
-    float l2 = 1.0 - smoothstep(0.0, lineWidth, abs(d2));
-
-    return max(l0, max(l1, l2));
+    float d0 = abs(fract(p.x) - 0.5);
+    float d1 = abs(fract(p.x * 0.5 + p.y * 0.866025) - 0.5);
+    float d2 = abs(fract(p.x * 0.5 - p.y * 0.866025) - 0.5);
+    float grid = min(d0, min(d1, d2));
+    return 1.0 - smoothstep(0.0, lw, grid);
   }
 
   void main() {
     vec2 xz = vWorldPos.xz;
-
-    // Distance from origin — radial glow pulse
     float dist = length(xz);
-    float radialPulse = sin(dist * 0.04 - uTime * 0.6) * 0.5 + 0.5;
-    float radialFade = 1.0 - smoothstep(0.0, 300.0, dist);
 
-    // Hex grid at two scales
-    float grid1 = hexGrid(xz, 9.0, 0.04);
-    float grid2 = hexGrid(xz, 45.0, 0.025) * 0.4;
-    float grid = max(grid1, grid2);
+    // Very subtle hex grid — this is now mostly under city streets
+    float grid = hexGrid(xz, 12.0, 0.03) * 0.3;
 
-    // Grid color: deep cyan-teal, brighter near origin
-    float proximity = 1.0 - smoothstep(0.0, 80.0, dist);
-    vec3 gridColor = mix(
-      vec3(0.0, 0.08, 0.12),  // distant: dark teal
-      vec3(0.0, 0.4, 0.5),    // near origin: brighter cyan
-      proximity
-    );
+    // Radial glow from Core origin
+    float radial = exp(-dist * 0.003) * 0.06;
 
-    // Pulse the grid slightly
-    gridColor *= 0.7 + radialPulse * 0.3 * radialFade;
+    vec3 base = vec3(0.015, 0.016, 0.022);
+    vec3 col  = base + vec3(0.0, 0.04, 0.06) * grid + vec3(0.0, 0.06, 0.08) * radial;
 
-    // Base ground color — near-black with slight blue
-    vec3 baseColor = vec3(0.003, 0.005, 0.012);
-
-    vec3 color = mix(baseColor, gridColor, grid * 0.85);
-
-    // Fog-like fade at edges
-    float edgeFade = 1.0 - smoothstep(400.0, 600.0, dist);
-    float alpha = edgeFade;
-
-    gl_FragColor = vec4(color, alpha);
+    float fade = 1.0 - smoothstep(500.0, 700.0, dist);
+    gl_FragColor = vec4(col, fade);
   }
 `
 
 export function createEnvironment(scene) {
-  // Ambient light — very dim blue-dark
-  const ambient = new THREE.AmbientLight(AMBIENT_COLOR, 0.8)
-  scene.add(ambient)
+  // Very dim ambient — city at night
+  scene.add(new THREE.AmbientLight(0x020408, 1.0))
 
-  // Directional fill — subtle, from above
-  const dirLight = new THREE.DirectionalLight(0x001428, 0.4)
-  dirLight.position.set(0, 80, 0)
-  scene.add(dirLight)
-
-  // Ground plane — large, transparent at edges
-  const groundGeo = new THREE.PlaneGeometry(1400, 1400, 1, 1)
-  const groundMat = new THREE.ShaderMaterial({
+  // Ground
+  const geo = new THREE.PlaneGeometry(2000, 2000, 1, 1)
+  const mat = new THREE.ShaderMaterial({
     vertexShader: GROUND_VERT,
     fragmentShader: GROUND_FRAG,
-    uniforms: {
-      uTime: { value: 0 }
-    },
+    uniforms: { uTime: { value: 0 } },
     transparent: true,
-    side: THREE.DoubleSide,
     depthWrite: false
   })
-
-  const ground = new THREE.Mesh(groundGeo, groundMat)
+  const ground = new THREE.Mesh(geo, mat)
   ground.rotation.x = -Math.PI / 2
-  ground.position.y = -0.01
-  ground.userData.isGround = true
+  ground.position.y = 0
   scene.add(ground)
 
   return {
     update(t) {
-      groundMat.uniforms.uTime.value = t
+      mat.uniforms.uTime.value = t
     }
   }
 }
