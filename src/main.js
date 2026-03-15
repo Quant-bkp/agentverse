@@ -6,6 +6,7 @@ import { createCities } from './world/cities.js'
 import { createRoads } from './world/roads.js'
 import { createSky } from './world/sky.js'
 import { createAtmosphere } from './world/atmosphere.js'
+import { createProps } from './world/props.js'
 import { createMovementControls } from './controls/movement.js'
 import { REGIONS, ZONE_PROXIMITY_RADIUS } from './config/regions.js'
 
@@ -18,6 +19,7 @@ const cities      = createCities(scene)
 const roads       = createRoads(scene)
 const sky         = createSky(scene)
 const atmosphere  = createAtmosphere(scene)
+const props       = createProps(scene)
 const movement    = createMovementControls(camera, renderer.domElement)
 
 // Start inside PFC Financial District, looking down a main street
